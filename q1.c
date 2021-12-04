@@ -12,29 +12,35 @@ pthread_mutex_t mutex_cont = PTHREAD_MUTEX_INITIALIZER;
 //Inicializando a variável de condição.
 int contador = 0;
 
-bool iterador(){
+bool iterador(void *threadid){
   //Travando a região crítica.
   pthread_mutex_lock(&mutex_cont);
-  
-  //Conferindo se o valor objetivo foi antigido.
-  if (contador == MAX){
-    //Destravando a região crítica.
+
+  //Conferindo se o valor desejado foi antigido.
+  if (contador < MAX){
+    ++contador;
+
+    //Verificando se a thread atual atingiu o valor desejado após incrementação.
+    if (contador == MAX){
+      printf("A thread %d chegou em 1m primeiro!\n", *((int*)threadid));
+      //Destravando a região crítica e retornando true considerando que a thread atual atingiu o valor desejado.
+      pthread_mutex_unlock(&mutex_cont);
+      return true;
+    }
+
+    //Destravando a região crítica e retornando false considerando que a thread atual não atingiu o valor desejado.
+    pthread_mutex_unlock(&mutex_cont);
+    return false;
+  } else {
+    //Destravando a região crítica e retornando true considerando que outra thread atingiu o valor desejado. 
     pthread_mutex_unlock(&mutex_cont);
     return true;
   }
-
-  ++contador;
-
-  //Destravando a região crítica.
-  pthread_mutex_unlock(&mutex_cont);
-  return false;
 }
 
 void *fthread(void *threadid){
   //Rodando a thread até que o contador não atinja o valor desejado.
-  while(!iterador()){
-    printf("A thread %d chegou em 1m primeiro!\n", *((int*)threadid));
-  }
+  while(!iterador(threadid)){};
 
   //Terminando a thread.
   pthread_exit(NULL);
