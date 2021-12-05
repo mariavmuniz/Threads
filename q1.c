@@ -52,7 +52,6 @@ int main (){
   int *ids[NTHREADS];
 
   //Criando as threads.
-  int rc;
   for(int i = 0; i < NTHREADS; ++i){
     ids[i] = (int*) malloc(sizeof(int)); 
     *ids[i] = i;
