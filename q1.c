@@ -56,7 +56,7 @@ int main (){
   for(int i = 0; i < NTHREADS; ++i){
     ids[i] = (int*) malloc(sizeof(int)); 
     *ids[i] = i;
-    rc = pthread_create(&threads[i], NULL, fthread, (void *) ids[i]);
+    pthread_create(&threads[i], NULL, fthread, (void *) ids[i]);
   }
 
   //Unindo as threads.
