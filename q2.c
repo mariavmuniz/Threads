@@ -19,29 +19,33 @@ Par createPar(int i, int f){ //função que configura o par que será passando p
   return P;
 }
 
-void* verificaOrdenacao(void*args) //função que faz a partição do vetor de acordo com o n dado
+void merge (int inicio, int fim){ //função que verifica se as partições estão ordenadas
+
+  if(vetor[inicio]< vetor[fim+1]){
+  }
+  else{
+    printf("não está ordenado\n");
+    exit(0);
+  }
+  printf("esta ordenado\n");
+}
+
+void* verificaOrdenacao(void*args) //função que verifica se as partições estão ordenadas
 {
   int i;
   int inicio = ((Par*)args)-> inicio;
   int fim = ((Par*)args)-> fim;
 
-  /*
-  for (i = inicio; i < fim + 1; i++)
-  {
-    printf("%d ", vetor[i]);
-  }
-  printf("\n");
-  */
-
   for(i=inicio;i<tam-1;i++){
     if(vetor[i]<vetor[i+1]){ 
-      //código
+    
     }
     else{
       printf("não está ordenado\n");
       exit(0);
     }
   }
+  merge(inicio, fim);
  
 }
 
