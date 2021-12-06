@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <pthread.h>
 
 
 typedef struct{
@@ -50,6 +50,8 @@ void leBitmap(Args* cabecalho, FILE* arqBitmap){
     for(i=0;i<limite;i++){
       printf("linha[%d] =%d %d %d\n", i, bitmap[i].R, bitmap[i].G, bitmap[i].B );
     }
+
+    fclose(arqBitmap);
 }
 
 int main(){
@@ -70,7 +72,7 @@ int main(){
   
 
 
-
+  free(bitmap);
 
 
 
