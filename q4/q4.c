@@ -22,8 +22,7 @@ void leBitmap(Args* cabecalho, FILE* arqBitmap){
 
   // lendo as duas primeiras linhas do arquivo
     fscanf(arqBitmap, "%s", cabecalho->numeroMagico);
-    fscanf(arqBitmap, "%d", &cabecalho->qtdLinhas);
-    fscanf(arqBitmap, "%d", &cabecalho->qtdColunas);
+    fscanf(arqBitmap, "%d %d", &cabecalho->qtdLinhas, &cabecalho->qtdColunas);
     fscanf(arqBitmap, "%d", &cabecalho->valorMaximo);
 
   //alocando a matriz do bitmap
