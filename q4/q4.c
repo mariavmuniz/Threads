@@ -35,11 +35,7 @@ void leBitmap(Args* cabecalho, FILE* arqBitmap){
     
   //lendo a matriz de bitmap
     for(i=0;i<limite;i++){
-
-      fscanf(arqBitmap, "%d", &bitmap[i].R);
-      fscanf(arqBitmap, "%d", &bitmap[i].G);
-      fscanf(arqBitmap, "%d", &bitmap[i].B);
-      
+      fscanf(arqBitmap, "%d %d %d", &bitmap[i].R, &bitmap[i].G, &bitmap[i].B);
     }
   //prints de checagem 
     printf("numeroMagico=%s\n", cabecalho->numeroMagico); 
