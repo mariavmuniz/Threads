@@ -1,109 +1,134 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+ 
+//estrutura que guarda o cabecalho do arquivo de entrada
+  typedef struct{
+    char numeroMagico[2];
+    int qtdLinhas, qtdColunas;
+    int valorMaximo;
+  } Args;
+  
+//estrutura que guarda o valor de RGB de cada pixel
+  typedef struct{ 
+    int R, G, B;
+    int index;
+  } PixelCor;
+  
+//vetor que guarda cada pixel 
+  PixelCor *bitmap; 
+
+int numThreads;
 
 
-typedef struct{
-  char numeroMagico[2];
-  int qtdLinhas, qtdColunas;
-  int valorMaximo;
-} Args;
+//Responsável por escrever a imagens em tons de cinza no arquivo de saída
+  void escreveBitmap(){
+
+    int i;
+
+    FILE *arqBitmapCvt;
+
+    arqBitmapCvt = fopen("bitmapcvt.ppm", "w"); //abertura do arquivo de input
+      if(arqBitmapCvt == NULL){
+        printf("Erro na criacao do arquivo!\n");
+      }
+      else{
+        for(i=0;i<numThreads;i++){
+        fprintf(arqBitmapCvt, "%d %d %d\n",  bitmap[i].R, bitmap[i].G, bitmap[i].B);
+        }
+      }
+
+    fclose(arqBitmapCvt);
+
+  }
 
 
-typedef struct{
-  double R, G, B;
-  int index;
-} PixelCor;
+//Responsável por converter a imagens em tons de cinza
+  void* converteTonsdeCinza(void*args){ //função que converte para os tons de cinza
+  
+    int i = (*(int*)args);
+  
+    int tomCinza = 0;
+  
+    tomCinza = ((bitmap[i].R)*0.30) + ((bitmap[i].G)*0.59) + ((bitmap[i].B)*0.11);
+  
+    bitmap[i].R=tomCinza;
+    bitmap[i].G=tomCinza;
+    bitmap[i].B=tomCinza;
+  
+  }
 
-PixelCor *bitmap; //vetor que fica cada pixel
-int numThreads;  //quantidade de threads
+//Responsável por ler o arquivo de entrada 
+  void leBitmap(Args* cabecalho, FILE* arqBitmap){
+    
+    int i, j;
 
-
-PixelCor createPar(double r, double g, double b, int i){ //função que configura o par que será passando por parâmentro
-  PixelCor P;
-  P.R = r;
-  P.G = g;
-  P.B = b;
-  P.index = i;
-  return P;
-}
-
-void* converteTonsdeCinza(void*args){ //função que converte para os tons de cinza
-
-  double r = ((PixelCor*)args)-> R;
-  double g = ((PixelCor*)args)-> G;
-  double b = ((PixelCor*)args)-> B;
-  int i = ((PixelCor*)args)-> index;
-
-  double tomCinza = 0;
-
-  tomCinza = (r*0.30) + (g*0.59) + (b*0.11);
-
-  bitmap[i].R=tomCinza;
-  bitmap[i].G=tomCinza;
-  bitmap[i].B=tomCinza;
-
-  printf("Cinza=%.0lf\n", tomCinza);
-
-}
-
-void leBitmap(Args* cabecalho, FILE* arqBitmap){
-   
-  int i, j;
-  int rc;
-  PixelCor P;
-  pthread_t *threadsBitmap;
-
-  // lendo as duas primeiras linhas do arquivo
-    fscanf(arqBitmap, "%s", cabecalho->numeroMagico);
-    fscanf(arqBitmap, "%d %d", &cabecalho->qtdLinhas, &cabecalho->qtdColunas);
-    fscanf(arqBitmap, "%d", &cabecalho->valorMaximo);
-
-  //alocando a Vetor e as Threads do bitmap
+    // lendo as três primeiras linhas do arquivo
+      fscanf(arqBitmap, "%s", cabecalho->numeroMagico);
+      fscanf(arqBitmap, "%d %d", &cabecalho->qtdLinhas, &cabecalho->qtdColunas);
+      fscanf(arqBitmap, "%d", &cabecalho->valorMaximo);
+      
     numThreads = cabecalho->qtdLinhas*cabecalho->qtdColunas;
-    bitmap = (PixelCor*) malloc (numThreads*sizeof (PixelCor)) ;
-    threadsBitmap = (pthread_t*) malloc(numThreads*sizeof(pthread_t));
 
-  //lendo a vetor do bitmap e criando as threads
-    for(i=0;i<numThreads;i++){
-      fscanf(arqBitmap, "%lf %lf %lf", &bitmap[i].R, &bitmap[i].G, &bitmap[i].B);
-      P = createPar(bitmap[i].R, bitmap[i].G, bitmap[i].B, i);
-      rc = pthread_create(&threadsBitmap[i], NULL, converteTonsdeCinza,&P);
-    }
-  //prints de checagem 
-    printf("numThreads=%d\n", numThreads);
-    printf("numeroMagico=%s\n", cabecalho->numeroMagico); 
-    printf("qtdLinhas=%d\n", cabecalho->qtdLinhas); 
-    printf("qtdColunas=%d\n", cabecalho->qtdColunas); 
-    printf("valorMaximo=%d\n", cabecalho->valorMaximo); 
-
-
-    for(i=0;i<numThreads;i++){
-      printf("linha[%d] =%.0lf %.0lf %.0lf\n", i, bitmap[i].R, bitmap[i].G, bitmap[i].B );
-    }
+    //alocando o vetor que guarda cada pixel 
+      bitmap = (PixelCor*) malloc (numThreads*sizeof (PixelCor)) ;
+      if(bitmap == NULL){
+        printf("Erro na alocacao da matriz!\n");
+      }
+      
+    //lendo a vetor do bitmap 
+      for(i=0;i<numThreads;i++){
+        fscanf(arqBitmap, "%d %d %d", &bitmap[i].R, &bitmap[i].G, &bitmap[i].B);
+      }
 
     fclose(arqBitmap);
-}
-
+  }
+ 
 int main(){
-
+ 
   Args cabecalho;
+ 
+  FILE *arqBitmap; 
 
-  FILE *arqBitmap; //criar a variável para manipular o arquivo
+  int i, rc;
+  
+  pthread_t *threadsBitmap;
 
+  PixelCor P;
+ 
 
-  arqBitmap = fopen("bitmap1.ppm", "r"); //abertura do arquivo de input
-
+  arqBitmap = fopen("bitmap1.ppm", "r"); 
   if(arqBitmap == NULL){
     printf("Erro na alocacao\n");
   }
   else{
     leBitmap(&cabecalho, arqBitmap);
+    int *ids[numThreads];
+    threadsBitmap = (pthread_t*) malloc(numThreads*sizeof(pthread_t));
+    for(i=0;i<numThreads;i++){ //criando threads
+      ids[i] = (int *) malloc(sizeof(int));
+      *ids[i] = i;
+      rc = pthread_create(&threadsBitmap[i], NULL, converteTonsdeCinza,(void *)ids[i]);
+      if(rc){
+        printf("Erro na criação das threads!\n");
+      }
+    }
+
+    for(i=0;i<numThreads;i++){
+      pthread_join(threadsBitmap[i],NULL);
+    }
+
+    escreveBitmap(arqBitmap);
+ 
+    for(i=0;i<numThreads;i++){
+      printf("linha[%d] =%d %d %d\n", i, bitmap[i].R, bitmap[i].G, bitmap[i].B );
+    }
     
   }
 
   free(bitmap);
-  pthread_exit(NULL);
 
+  pthread_exit(NULL);
+ 
   return 0;
 }
