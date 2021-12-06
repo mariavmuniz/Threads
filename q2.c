@@ -37,10 +37,7 @@ void* verificaOrdenacao(void*args) //função que verifica se as partições est
   int fim = ((Par*)args)-> fim;
 
   for(i=inicio;i<tam-1;i++){
-    if(vetor[i]<vetor[i+1]){ 
-    
-    }
-    else{
+    if(vetor[i]>=vetor[i+1]){
       printf("não está ordenado\n");
       exit(0);
     }
