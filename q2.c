@@ -20,10 +20,7 @@ Par createPar(int i, int f){ //função que configura o par que será passando p
 }
 
 void merge (int inicio, int fim){ //função que verifica se as partições estão ordenadas
-
-  if(vetor[inicio]< vetor[fim+1]){
-  }
-  else{
+  if(vetor[inicio]>= vetor[fim+1]){
     printf("não está ordenado\n");
     exit(0);
   }
