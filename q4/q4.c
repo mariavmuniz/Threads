@@ -118,7 +118,7 @@ int main(){
       pthread_join(threadsBitmap[i],NULL);
     }
 
-    escreveBitmap(arqBitmap);
+    escreveBitmap();
  
     for(i=0;i<numThreads;i++){
       printf("linha[%d] =%d %d %d\n", i, bitmap[i].R, bitmap[i].G, bitmap[i].B );
@@ -129,6 +129,5 @@ int main(){
   free(bitmap);
 
   pthread_exit(NULL);
- 
-  return 0;
+
 }
