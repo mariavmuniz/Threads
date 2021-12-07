@@ -6,7 +6,7 @@
 #define TAM 10
 
 
-int *vetor;
+int vetor[TAM];
 
 typedef struct{ //estrutura que contém o índice de ínicio e fim da partição
   int inicio, fim;
