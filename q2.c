@@ -72,7 +72,7 @@ int main()
       final = tam - 1;
     }
     Par P = createPar(i, final);
-    rc = pthread_create(&threads[idThread], NULL, verificaOrdenacao,&P);
+    pthread_create(&threads[idThread], NULL, verificaOrdenacao,&P);
     pthread_join(threads[idThread],NULL);
     idThread++;
   }  
