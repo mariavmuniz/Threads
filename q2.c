@@ -7,47 +7,58 @@
 
 
 int vetor[TAM];
+double n;
 
-typedef struct{ //estrutura que contém o índice de ínicio e fim da partição
-  int inicio, fim;
-}Par;
+//estrutura que contém o índice de ínicio e fim da partição
+  typedef struct{ 
+    int inicio, fim;
+  }Par;
 
-Par createPar(int i, int f){ //função que configura o par que será passando por parâmentro
-  Par P;
-  P.inicio = i;
-  P.fim = f;
-  return P;
-}
 
-void merge (int inicio, int fim){ //função que verifica se as partições estão ordenadas
-  if(vetor[inicio]>= vetor[fim+1]){
-    printf("não está ordenado\n");
-    exit(0);
+//função que configura o par que será passando por parâmentro
+  Par createPar(int i, int f){ 
+    Par P;
+    P.inicio = i;
+    P.fim = f;
+    return P;
   }
-  printf("esta ordenado\n");
-}
 
-void* verificaOrdenacao(void*args) //função que verifica se as partições estão ordenadas
-{
-  int i;
-  int inicio = ((Par*)args)-> inicio;
-  int fim = ((Par*)args)-> fim;
-
-  for(i=inicio;i<tam-1;i++){
-    if(vetor[i]>=vetor[i+1]){
-      printf("não está ordenado\n");
+//função que verifica se as partições estão ordenadas entre si
+  int merge (int inicio, int fim){ 
+    if(vetor[inicio]>= vetor[fim+1]){
+      printf("Não está ordenado\n");
       exit(0);
     }
+    return 1;
+   
   }
-  merge(inicio, fim);
- 
-}
+
+//função que verifica se as partições estão ordenadas
+  void* verificaOrdenacao(void*args) 
+  {
+    int i;
+    int inicio = ((Par*)args)-> inicio;
+    int fim = ((Par*)args)-> fim;
+    int ordenado;
+    double cont = 0;
+
+    for(i=inicio;i<tam-1;i++){
+      if(vetor[i]>=vetor[i+1]){
+        printf("Não está ordenado!\n");
+        exit(0);
+      }
+    }
+   ordenado =  merge(inicio, fim);
+   printf("Esta ordenado!\n");
+   
+  
+  }
 
 int main()
 {
 
   int i, final = 0, rc, idThread = 0;
-  double particao = 0, n;
+  double particao = 0;
 
   pthread_t *threads;
 
@@ -76,9 +87,24 @@ int main()
     pthread_join(threads[idThread],NULL);
     idThread++;
   }  
+
+  for(i=0;i<n;i++){
+    pthread_join(threads[i],NULL);
+  }
      
   pthread_exit(NULL);
   free(vetor);
 
   return 0;
 }
+
+/*
+Casos testes:
+1=> 1 2 3 4 5 6 7 8 9 10
+    3
+2=> 1 2 2 4 5 6 7 8 8 10 (ta dando errado)
+    3
+
+
+
+*/
