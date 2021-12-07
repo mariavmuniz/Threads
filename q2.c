@@ -27,7 +27,7 @@ int ordenado=0;
 //função que verifica se as partições estão ordenadas entre si
   void verificaExtremos(int inicio, int fim)
   { 
-    if(vetor[inicio]>= vetor[fim+1] && fim<n){
+    if(vetor[inicio]> vetor[fim+1] && fim<n){
       printf("Não esta ordenado\n");
       exit(0);
     }
