@@ -1,0 +1,119 @@
+  -- Contextualização --
+Threads são lihas de execução em um processo, compartilhando o mesmo contesto do processo. No entanto, cada uma terá também o seu próprio
+contexto, ocupando menos memória do que uma abordagem considerando vários processos.. Logo, considerando n threads dentro de um processo,
+cada uma terá sua própria pilha e valores de registradores, possibilitando que possam ser executadas de forma concorrente. 
+
+  -- Compilação --
+$ gcc -lpthread prog.c -o prog 
+$ gcc -pthread prog.c -o prog
+
+  -- Biblioteca -- 
+#include <pthread.h>, fornece suporte para o gerenciamento, mutexes, variáveis de condição e sincronização via barreiras, por exemplo.
+
+  -- Implementação básica -- 
+pthread_t th;       Inicialização de uma variável do tipo thread.
+
+pthread_create();   Os parâmetros serão, respectivamente, a variável que representa a thread, os atributos que podem modificar
+                    as configurações padrão - deve ser dado como NULL caso nenhuma alteração seja necessária -, o código da 
+                    thread, o qual é representado por uma função e os argumentos associados a essa mesma função.
+
+  Observações quanto a criação:
+  -> Toda função que vai representar o código da thread só tem um parâmetro do tipo void, caso queira passar mais de um argumento, 
+  seria preciso a utilização de uma struct.
+  -> A decisão de qual thread será executada depende do escalonador, ou seja, não depende da ordem de criação. Motivo pela qual elas 
+  devem ser criadas de forma que sejam independentes entre si, evitando deadlock.
+  -> Ao utilizar várias threads, não usar o contador como o id, mas sim um array de identificadores de inteiro que, uma vez alocado
+  dinamicamente, irá ficar na região de memória heap e nenhuma outra thread poderá modificar o código salvo.
+
+
+pthread_exit(NULL); Finaliza a thread, podendo retornar algum valor. Assim, como a main é uma thread, caso não tenha essa função 
+                    associado no final da mesma, o processo será encerrado e todas as outras threads serão términadas, independente
+                    do estado da execução.
+pthread_cancel();   Uma thread é cancelada por outra thread. 
+exit()              Término de um processo.
+
+
+pthread_join();     Faz com que uma thread espere pela outra. O primeiro parâmetro é a thread que se deseja esperar e o segundo, o valor 
+                    retornado por essa mesma thread através do pthread_exit(). Um alvo - thread a ser esperada - só pode estar em um único 
+                    join, caso contrário, pode ocorrer um erro lógico.
+
+pthread_self();     Retorna o id da thread usando o tipo pthread_t.  
+pthread_equal();    Verifica se duas threads são iguais, se sim, o valor retornado é 0.
+
+  -- Exclusão mútua -- 
+Garante que somente uma thread terá acesso a um recurso por vez. Logo, é utilizada diante uma condição de disputa, onde uma mesma região 
+crítica quer ser acessada por duas threads diferentes.
+
+Para ser apropriada, não se deve considerar velocidades ou número de CPUs, nenhum processo executando fora da sua região crítica pode bloquear
+outros processos e nenhum processo deve esperar eternamente para entrar em sua região crítica. 
+
+mutex -> mecanismo para garantir exlusão mútua no acesso ao estado compartilhado, independente do valor desse estado. Assim, possui
+operações atômicas (somente uma thread por vez) de travamento e destravamento.
+
+Inicialização:
+  - estática com adoção de macro: pthread_mutex_t mymutex = PHTREAD_MUTEX_INITIALIZER;
+  - dinâmica com a utilização da variável e a função de incialização do mutex: int pthread_mutex_init(pthread_mutex_t * restrict mutex, const 
+  pthread_mutexattr_t * restrict attr), onde o segundo é algum argumento que pode alterar as configurações padrões do mutex.
+    pthread_mutex_t mymutex;
+    pthread_mutex_init(&mymutex, NULL);
+
+Destruição:
+  - int pthread_mutex_destroy(pthread_mutex_t *mutex);
+
+Travamento:
+  - int pthread_mutex_lock(pthread_mutex_t *mutex) é bloqueante e trava o mutex. ASsim, tentar fazer um lock em um mutex que já está travado faz 
+  com que a thread fique bloqueada até que o mutex seja liberado e ela possa tentar fazer o travamento.
+
+  - int pthread_mutex_trylock(pthread_mutex_t *mutex) não é bloqueante, retornando 0 se o travamento foi feito com sucesso, mas não para a thread, 
+  vai continuar sua execução. Assim, em while(!pthread_mutex_trylock(&mymutex)){}, acontece uma espera ocupada, uma vez que fica repetindo e não 
+  faz nada.
+
+  - int pthread_mutex_unlock(pthread_mutex_t *mutex) destrava o mutex uma vez que não há mais necessidade de usar a região crítica.
+
+  -> As vezes exclusão mútua não é bastante, pois além de garantir que as threads não utilizem de forma simultânea um recurso compartilhado, há a 
+  necessidade que elas se comuniquem. Ou seja, para o caso em que são cooperativas, uma thread só pode progredir se outra tiver realizado certa 
+  ação, ou seja, se certa condição for verdadeira - onde a condição refere-se aos valores dos elementos do estado compartilhado pelas threads.
+
+  -- Variáveis de condição -- 
+Mecanismos que complementam mutexes, ou seja, enquanto mutexes permitem sincronização no acesso, as variáveis permitem sinconização dependente 
+de condições. Logo, são mecanismos de um alto nível de abtração (maior que semáforos), evitando a necessidade de checar continuamente se a condição 
+é verdadeira para que a thread possa continuar a execução (espera ocupada).
+
+ -> alternância estrita é uma técnica que viola a condição de não preempção - uma thread pode bloquear outra mesmo não estando na região crítica.
+
+Operações básicas:
+  - pthread_cond_wait(cond_var, mutex) que coloca uma thread para dormir enquanto a condição é falsa. Caso receba um sinal para acordar, vai primeiro 
+  tentar travar o mutex.
+
+  - pthread_cond_signal(cond_var) acorda somente uma thread que esteja dormindo na variável de condição associada. 
+
+  - pthread_cond_broadcast(cond_var) acorda todas as threads que estão dormindo de acordo com a variável. No entanto, somente a que conseguir travar 
+  o mutex é que vai poder continuar. 
+
+ Caso um signal seja enviado para uma thread que já está acordada, o sinal será ignorado.
+
+Inicialização:
+  - estática: pthread_cond_t mycv = PTHREAD_COND_INITIALIZER
+  - dinâmica, onde o segundo parâmetro da função init é usado para fazer alterações nos atributos da variável de condição, se NULL, assume-se a 
+  implementação padrão:
+    pthread_cond_t mycv;
+    pthread_cond_init(&mycv, NULL); onde
+
+Destruição:
+  - pthread_cond_destroy(&mycv);
+
+  -- Barreiras -- 
+Garante a sincronização de múltiplas threads, onde as que alcançam a barreira dormem até que todas tenham alcançado, fazendo com que todas acordem e
+continuem a execução.
+
+  -> é necessário informar a quantidade de threads que irão utilizar a barreira
+  -> para compilação é necessário a macro _XOPEN_SOURCE 600 ou utilizar -D_COPEN_SOURCE=600 no compilador
+
+Inicialização:
+  - int pthread_barrier_init(pthread_barrier_t *barrier, const pthread_barrierattr_t * restrict attr, unsigned count);
+
+Destruição:
+  - int pthread_barrier_detroy(pthread_barrier_t *barrier)
+
+Aguardar:
+  - int pthread_barrier_wait(pthread_barrier_t *barrier); - faz com que uma thread aguarde outras
