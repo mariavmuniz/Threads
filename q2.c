@@ -3,7 +3,7 @@
 #include <pthread.h>
 #include <math.h>
 
-#define tam 10
+#define TAM 10
 
 
 int *vetor;
