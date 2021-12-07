@@ -3,10 +3,12 @@
 #include <pthread.h>
 #define tam 10
 
-pthread_mutex_t mutexEscritoras = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t escrevendo= PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t db = PTHREAD_MUTEX_INITIALIZER;
+
 
 int *regiaocritica;
+int leitoresRegiaoCritica;
 
 void* fazEscrita(void*args){
 
@@ -16,7 +18,7 @@ void* fazEscrita(void*args){
 
   while(1){
 
-    pthread_mutex_lock(&mutexEscritoras); //trava o mutex
+    pthread_mutex_lock(&mutex); //trava o mutex
 
     letraAleatoria = 'A' + (random()%26);
     posicao = rand()%(tam-1);
@@ -24,7 +26,7 @@ void* fazEscrita(void*args){
     regiaocritica[posicao] = letraAleatoria;
 
     printf("A thread[%d] esta escrevendo a letra [%c] na posicao [%d]\n", i, letraAleatoria, posicao);
-    pthread_mutex_unlock(&mutexEscritoras); //destrava o mutex
+    pthread_mutex_unlock(&mutex); //destrava o mutex
     system("sleep 01");
   }
 
@@ -36,8 +38,26 @@ void* fazLeitura(void*args){
   int posicao;
 
     while(1){
+      pthread_mutex_lock(&mutex);
+      leitoresRegiaoCritica++;
+
+      if(leitoresRegiaoCritica == 1){
+        pthread_mutex_lock(&db);
+      }
+      pthread_mutex_unlock(&mutex);
+
       posicao = rand()%(tam-1);
       printf("A thread[%d] esta fazendo a leitura na posicao [%d]\n", i, posicao);
+
+      pthread_mutex_lock(&mutex);
+      
+      leitoresRegiaoCritica--;
+
+      if(leitoresRegiaoCritica == 0){
+        pthread_mutex_unlock(&db);
+      }
+      pthread_mutex_unlock(&mutex);
+
       system("sleep 01");
     }
 
@@ -57,12 +77,6 @@ int main(){
 
   printf("Digite a quantidade de escritoras: ");
   scanf("%d", &qtdEscritoras);
-
-  for(i=0;i<5;i++){
-    
-    char randomLetter = 'A' + (random()%26);
-    printf("letra=%c\n", randomLetter);
-  }
 
   int *idEscritoras[qtdEscritoras];
   int *idLeitoras[qtdLeitoras];
