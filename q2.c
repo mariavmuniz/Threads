@@ -84,5 +84,8 @@ int main(){
   }
 
   printf("O vetor está ordenado!\n");
+
+  //Desalocando a memória alocada.
+  free(threads);
   pthread_exit(NULL);
 }
