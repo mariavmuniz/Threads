@@ -79,6 +79,8 @@ int main(){
       scanf("%d", &bitmap[i][j]);
       //Inicializando cada elemento como seu próprio representativo.
       rps[i * M + j].representativo = i * M + j;
+      //Inicializando o mutex de forma dinâmica.
+      pthread_mutex_init(&rps[i * M + j].mutex, NULL);
     }
   }
 
