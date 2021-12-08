@@ -14,6 +14,7 @@ typedef struct No{
 typedef struct Fila{
   No *header;
   No *tail;
+  int size;
 }Fila;
 
 
@@ -43,13 +44,13 @@ Fila *criaFila(){
   Fila *f = (Fila *) malloc(sizeof(Fila));
   f->tail = criaSentinela(NULL);
   f->header = f->tail;
-  tamFila = 0;
+  f->size = 0;
   return f;
 }
 
 //criando a fila de passageiros
 Fila *filaPassageiros;
-pthread_t passageiro[QTDPASSAGEIROS];
+pthread_t *passageiro;
 pthread_t carrinho;
 
 
@@ -57,7 +58,8 @@ void colocaFila(int id){
 
   filaPassageiros->tail->next = criaNo(id, NULL);
   filaPassageiros->tail = filaPassageiros->tail->next;
-  tamFila++;
+  (filaPassageiros->size)++;
+  printf("tamFila = %d\n", filaPassageiros->size);
 }
 
 
@@ -66,7 +68,7 @@ int retiraFila(){
   int valor;
 
 
-  if(tamFila == 0){
+  if(filaPassageiros->size == 0){
     printf("A fila esta vazia!");
   }
 
@@ -76,7 +78,8 @@ int retiraFila(){
   if(filaPassageiros->header->next == NULL){
     filaPassageiros->tail = filaPassageiros->header;
   }
-  tamFila--;
+  (filaPassageiros->size)--;
+  printf("dimiuidoF=%d\n", filaPassageiros->size);
 
   return valor;
 }
@@ -87,13 +90,12 @@ void* fCarrinho(){
 
   printf("Carrinho ta enchendo!!\n");
   
-  printf("Pessoas entrando no carrinho: ");
+  
   for(i=0;i<VAGASCARRINHO;i++){
     id = retiraFila();
-    printf("%d ", id);
     buffer[i] = id;
   }
-  printf("\n");
+ 
 
   printf("Dando a [%d] volta na montanha russa!!\n", numVoltas);
 
@@ -126,25 +128,28 @@ void* fPassageiros(void*args){
 
 void* fMontanhaRussa(){
 
+  passageiro = (pthread_t *) malloc(QTDPASSAGEIROS*sizeof(pthread_t));
+
   numVoltas = 0;
 
   int i, *ids[QTDPASSAGEIROS];
-
-  while (numVoltas != (MAXVOLTAS-1)){
 
     for(i = 0 ; i < QTDPASSAGEIROS ; i++){
       ids[i] = (int*) malloc(sizeof(int));
       *ids[i] = i;
       pthread_create(&passageiro[i], NULL, fPassageiros, (void *) ids[i]);
     }
-     pthread_create(&carrinho, NULL, fCarrinho, NULL);
+    pthread_create(&carrinho, NULL, fCarrinho, NULL);
+    if(numVoltas == MAXVOLTAS){
+      for(i = 0;  i < QTDPASSAGEIROS; i++){
+      free(ids[i]);
+      } 
+      exit(0);
+    }
 
-  }
   
-  for(i = 0;  i < QTDPASSAGEIROS; i++){
-    free(ids[i]);
-  }
-  exit(0);
+  
+ 
 }
 
 
