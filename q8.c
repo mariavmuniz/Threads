@@ -87,10 +87,13 @@ void* fCarrinho(){
 
   printf("Carrinho ta enchendo!!\n");
   
+  printf("Pessoas entrando no carrinho: ");
   for(i=0;i<VAGASCARRINHO;i++){
     id = retiraFila();
+    printf("%d ", id);
     buffer[i] = id;
   }
+  printf("\n");
 
   printf("Dando a [%d] volta na montanha russa!!\n", numVoltas);
 
@@ -109,7 +112,7 @@ void* fCarrinho(){
   for(i=0;i<10;i++){
     printf("%d ", buffer[i]);
   }
-  
+  printf("\n");  
 
 }
 
@@ -127,7 +130,7 @@ void* fMontanhaRussa(){
 
   int i, *ids[QTDPASSAGEIROS];
 
-  while (numVoltas != MAXVOLTAS){
+  while (numVoltas != (MAXVOLTAS-1)){
 
     for(i = 0 ; i < QTDPASSAGEIROS ; i++){
       ids[i] = (int*) malloc(sizeof(int));
@@ -142,11 +145,7 @@ void* fMontanhaRussa(){
     free(ids[i]);
   }
   exit(0);
-
-  
-
 }
-
 
 
 //Função responsável por imprimir a fila
@@ -163,17 +162,14 @@ void imprimeFila()
 
 int main(){
 
-  int i;
-
   filaPassageiros =  criaFila();
 
   pthread_t montanhaRussa;
  
-  imprimeFila();
+  //imprimeFila();
 
   pthread_create(&montanhaRussa, NULL, fMontanhaRussa, NULL);
+  
 
-
-
-  return 0;
+  pthread_exit(NULL);
 }
