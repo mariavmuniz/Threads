@@ -1,28 +1,43 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <pthread.h>
+
+//Definindo as limitações de acordo com a questão.
 #define QTDPASSAGEIROS 20
 #define MAXVOLTAS 10
 #define VAGASCARRINHO 10
 
-
+//Criando uma estrutura que representa o nó de cada fila.
 typedef struct No{
   int valor;
   struct No *next;
-}No;
+} No;
 
+//Criando uma estrutura que representa a fila.
 typedef struct Fila{
   No *header;
   No *tail;
   int size;
-}Fila;
+} Fila;
+
+//Inicializando o mutex de forma estática.
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; 
+
+//Inicializando o buffer que irá representar as vagas no carrinho.
+int buffer[VAGASCARRINHO];
+int numVoltas = 0;
+
+//Inicializando a fila de passageiros, o vetor de threads e os ids associados a cada um.
+Fila *filaPassageiros;
+int *ids[QTDPASSAGEIROS];
+pthread_t passageiro[QTDPASSAGEIROS];
+
+//Inicializando a thread do carrinho.
+pthread_t carrinho;
 
 
-int tamFila;
-int buffer[VAGASCARRINHO]; //buffer responsável por representar as vagas no carrinho
-int numVoltas;
-
-//cria um nó, seta o valor e aponta o tail para NULL
+//Criando um nó.
 No *criaNo(int i, No *nextVal){
   No *n = (No*) malloc(sizeof(No));
   n->valor = i;
@@ -30,17 +45,15 @@ No *criaNo(int i, No *nextVal){
   return n;
 }
 
-//cria o nó sentinela
+//Crinado o header.
 No *criaSentinela(No *nextVal){
   No *n = (No*) malloc(sizeof(No));
   n->next = nextVal;
   return n;
-
 }
 
-//Função que faz o setup da fila 
+//Criando uma fila.
 Fila *criaFila(){
-
   Fila *f = (Fila *) malloc(sizeof(Fila));
   f->tail = criaSentinela(NULL);
   f->header = f->tail;
@@ -48,133 +61,97 @@ Fila *criaFila(){
   return f;
 }
 
-//criando a fila de passageiros
-Fila *filaPassageiros;
-pthread_t *passageiro;
-pthread_t carrinho;
-
-
+//Colocando um passageiro na fila.
 void colocaFila(int id){
+  //Travando a região crítica.
+  pthread_mutex_lock(&mutex);
 
   filaPassageiros->tail->next = criaNo(id, NULL);
   filaPassageiros->tail = filaPassageiros->tail->next;
   (filaPassageiros->size)++;
-  printf("tamFila = %d\n", filaPassageiros->size);
+
+  //Destravando a região crítica.
+  pthread_mutex_unlock(&mutex);
 }
 
-
+//Retirando um passageiro da fila.
 int retiraFila(){
-
-  int valor;
-
-
   if(filaPassageiros->size == 0){
     printf("A fila esta vazia!");
   }
 
-  valor = filaPassageiros->header->next->valor;
+  int valor = filaPassageiros->header->next->valor;
   filaPassageiros->header->next = filaPassageiros->header->next->next;
 
   if(filaPassageiros->header->next == NULL){
     filaPassageiros->tail = filaPassageiros->header;
   }
-  (filaPassageiros->size)--;
-  printf("dimiuidoF=%d\n", filaPassageiros->size);
 
+  (filaPassageiros->size)--;
   return valor;
 }
 
 void* fCarrinho(){
+  while(++numVoltas < MAXVOLTAS){
+    printf("Carrinho ta enchendo!!\n");
+    for(int i = 0; i < VAGASCARRINHO; i++){
+      //Retirando elementos da fila e colocando no buffer.
+      buffer[i] = retiraFila();
+    }
 
-  int i, id;
+    printf("Dando a [%d] volta na montanha russa!!\n", numVoltas);
 
-  printf("Carrinho ta enchendo!!\n");
-  
-  
-  for(i=0;i<VAGASCARRINHO;i++){
-    id = retiraFila();
-    buffer[i] = id;
-  }
- 
+    printf("Saindo do carrinho!!\n");
 
-  printf("Dando a [%d] volta na montanha russa!!\n", numVoltas);
+    for(int i = 0; i < VAGASCARRINHO; i++){
+      //Retirando os elementos do carrinho e colocando no final da fila.
+      colocaFila(buffer[i]);
+    }
 
-  printf("Saindo do carrinho!!\n");
-
-  for(i=0;i<VAGASCARRINHO;i++){
-    id = buffer[i];
-    colocaFila(id);
-    buffer[i] = 0;
+    printf("Dando uma volta no parque.....\n");
   }
 
-  numVoltas++;
-
-  printf("Dando uma volta no parque.....\n");
-
-  for(i=0;i<10;i++){
-    printf("%d ", buffer[i]);
-  }
-  printf("\n");  
-
+  pthread_exit(NULL);
 }
 
-//função responsável por colocar 
+//Adicionando os passageiros iniciais na fila.
 void* fPassageiros(void*args){
-
-  int id = (*(int*)args);
-  colocaFila(id);
-  
+  colocaFila((*(int*)args)); 
+  pthread_exit(NULL);
 }
 
 void* fMontanhaRussa(){
-
-  passageiro = (pthread_t *) malloc(QTDPASSAGEIROS*sizeof(pthread_t));
-
-  numVoltas = 0;
-
-  int i, *ids[QTDPASSAGEIROS];
-
-    for(i = 0 ; i < QTDPASSAGEIROS ; i++){
-      ids[i] = (int*) malloc(sizeof(int));
-      *ids[i] = i;
-      pthread_create(&passageiro[i], NULL, fPassageiros, (void *) ids[i]);
-    }
-    pthread_create(&carrinho, NULL, fCarrinho, NULL);
-    if(numVoltas == MAXVOLTAS){
-      for(i = 0;  i < QTDPASSAGEIROS; i++){
-      free(ids[i]);
-      } 
-      exit(0);
-    }
-
-  
-  
- 
-}
-
-
-//Função responsável por imprimir a fila
-void imprimeFila()
-{
-  No *cursor = filaPassageiros->header;
-  while (cursor->next != NULL)
-  {
-    printf("%d\n", cursor->next->valor);
-    cursor = cursor->next;
+  //Criando o vetor de threads.
+  for(int i = 0 ; i < QTDPASSAGEIROS ; i++){
+    ids[i] = (int*) malloc(sizeof(int));
+    *ids[i] = i;
+    pthread_create(&passageiro[i], NULL, fPassageiros, (void *) ids[i]);
   }
+  
+  //Criando a thread de carrinho.
+  pthread_create(&carrinho, NULL, fCarrinho, NULL);
 
+  //Unindo as threads.
+  for(int i = 0; i < QTDPASSAGEIROS; i++){
+    pthread_join(passageiro[i], NULL);
+  }
+  pthread_join(carrinho, NULL);
+
+  //Desalocando a memória alocada.
+  for(int i = 0;  i < QTDPASSAGEIROS; i++){
+  free(ids[i]);
+  } 
+
+  pthread_exit(NULL);
 }
 
 int main(){
-
+  //Inicializando a fila.
   filaPassageiros =  criaFila();
-
+  
+  //Criando a thread da montanha russa.
   pthread_t montanhaRussa;
- 
-  //imprimeFila();
-
   pthread_create(&montanhaRussa, NULL, fMontanhaRussa, NULL);
   
-
   pthread_exit(NULL);
 }
